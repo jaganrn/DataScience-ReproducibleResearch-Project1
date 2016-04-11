@@ -5,21 +5,90 @@ output:
     keep_md: true
 ---
 
-
 ## Loading and preprocessing the data
-
-
+```{r,echo=TRUE}
+# load the activity data by unzipping the activity.zip
+setwd("c:/usr/jagan/DataScience/ReproducibleResearch/Week1/DataScience-ReproducibleResearch-Project1")
+if(!file.exists("activity.csv")) { #unzip for the first time
+    unzip("activity.zip")
+}
+activityData <- read.csv("activity.csv")
+head(activityData)
+```
 
 ## What is mean total number of steps taken per day?
+In this section missing values are ignored during the computations
 
+```{r,echo=TRUE}
+# compute mean total number of steps taken per day
+# draw histogram of total number of steps per day
+stepsByDay <- aggregate(steps ~ date, data=activityData, FUN=sum, na.rm=TRUE)
+hist(stepsByDay$steps, main="Histogram of Number of Steps per Day", xlab="Number of Steps/Day", col=blues9)
 
+# compute mean & median steps per day
+# summary(stepsByDay$steps) can also be used with options(digits=10)
+mean(stepsByDay$steps)
+median(stepsByDay$steps)
+
+```
 
 ## What is the average daily activity pattern?
 
+```{r,echo=TRUE}
+averageStepsBy5MinInterval <- aggregate(steps ~ interval, data=activityData, FUN=mean, na.rm=TRUE)
+plot(averageStepsBy5MinInterval$interval, averageStepsBy5MinInterval$steps, type="l", xlab="interval", ylab="Average Steps", col="purple")
+averageStepsBy5MinInterval[which.max(averageStepsBy5MinInterval$steps),]$interval
 
+```
 
 ## Imputing missing values
 
+As there are a number of days/intervals where there are missing values (coded as NA), in this step the missing values are filled by the average value for the slot across all the days
 
+```{r,echo=TRUE}
+# fill the NA values with the average steps for that interval across all days
+totalRecords <- length(activityData$steps)
+for(i in 1:totalRecords) {
+    if(is.na(activityData[i,1])) {
+        index <- i%%288;
+        if(index==0) {
+            index <- 288  # special case as R indexes from 1..N
+        }
+        activityData[i,1] <- averageStepsBy5MinInterval[index, 2]
+    }  
+}
+
+stepsByDayFilledData <- aggregate(steps ~ date, data=activityData, FUN=sum)
+hist(stepsByDayFilledData$steps, main="Histogram of Number of Steps per Day", xlab="Number of Steps/Day", col="red")
+
+# compute mean & median steps per day
+# summary(stepsByDayFilledData$steps) can also be used with options(digits=10)
+mean(stepsByDayFilledData$steps)
+median(stepsByDayFilledData$steps)
+```
+
+By looking at the filled data I do not see much difference in the aggregate data. The only difference is a slight change in the median value
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+
+```{r,echo=TRUE}
+library(rmarkdown)
+library(lattice)
+# added a new column named dateCategory to indicate Weekday (Mon-Fri) or Weekend (Sat-Sun). POSIXlt$wday range is 0..6 with 0 as Sun
+activityData$dateCategory <- ifelse(as.POSIXlt(activityData$date)$wday %in% c(1,2,3,4,5), "Weekday", "Weekend")
+averageStepsBy5MinInterval <- aggregate(steps ~ interval+dateCategory, data=activityData, FUN=mean)
+
+# plot separate graphs for Weekend and Weekday
+xyplot(steps ~ interval | dateCategory, averageStepsBy5MinInterval, type="l", layout=c(1,2), xlab="Interval", ylab="Number of Steps")
+averageStepsBy5MinInterval[which.max(averageStepsBy5MinInterval$steps),]$interval
+
+```
+
+NOTE: generate the html & md files using rmarkdown::render function as I had difficulty in running *knitr2html()* function. Based on the plots I see minor difference in the patten of activities on Weekend compared to Weekday
+
+
+
+
+
+
