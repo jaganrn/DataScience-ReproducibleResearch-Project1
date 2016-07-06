@@ -4,7 +4,7 @@
 
 ```r
 # load the activity data by unzipping the activity.zip
-setwd("c:/usr/jagan/DataScience/ReproducibleResearch/Week1/DataScience-ReproducibleResearch-Project1")
+setwd("/Users/jagan/work/DataScience/ReproducibleResearch/Week2/DataScience-ReproducibleResearch-Project1")
 if(!file.exists("activity.csv")) { #unzip for the first time
     unzip("activity.zip")
 }
